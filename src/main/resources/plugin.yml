@@ -1,0 +1,21 @@
+name: Werwolf
+version: 1.1.0
+main: de.silas.werwolf.WerwolfPlugin
+api-version: '26.3'
+author: Silas
+description: Werwolf-Minigame mit Spielleitungs-Menü, Kino-Nacht und Häusern
+softdepend: [Citizens]
+
+commands:
+  build:
+    description: Teleport in den Baubereich (Kreativ)
+    permission: werwolf.admin
+  werwolf:
+    description: Öffnet das Werwolf-Spielleitungsmenü
+    aliases: [ww]
+    permission: werwolf.admin
+
+permissions:
+  werwolf.admin:
+    description: Zugriff auf das Spielleitungsmenü
+    default: op
