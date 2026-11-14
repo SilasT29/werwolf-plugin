@@ -70,6 +70,9 @@ public class GameManager {
     private UUID loverB;
     private boolean amorSelecting;
     private UUID amorFirst;
+    private boolean wolfPhaseStarted;
+    private boolean seerPhaseStarted;
+    private boolean witchPhaseStarted;
     private final List<UUID> amorSelected = new ArrayList<>();
     private BukkitTask amorTimer;
     private int amorSeconds;
@@ -678,7 +681,7 @@ public class GameManager {
                 Script.story(plugin, Script.INTRO);
             }
             if (!narratorActive()) {
-                scheduleNight(900L);
+                scheduleNight(200L);
             }
         }, 140L);
     }
@@ -692,7 +695,9 @@ public class GameManager {
         }
         state = State.NIGHT;
         wolfTargets.clear();
-        Script.say(Script.SLUT);
+        if (alivePlayerWithRole(Role.DORFSCHLAMPE) != null) {
+            Script.say(Script.SLUT);
+        }
         if (narratorEnabled && narratorId != null) {
             Player narrator = Bukkit.getPlayer(narratorId);
             if (narrator != null) {
@@ -712,9 +717,10 @@ public class GameManager {
 
     /** Wölfe aufwecken (nach der Dorfschlampe). */
     private void beginWolfPhase() {
-        if (state != State.NIGHT) {
+        if (state != State.NIGHT || wolfPhaseStarted) {
             return;
         }
+        wolfPhaseStarted = true;
         Script.say(Script.WOLVES);
         startWolfTimer();
         for (Map.Entry<UUID, Role> entry : new ArrayList<>(roles.entrySet())) {
@@ -765,6 +771,9 @@ public class GameManager {
     /** Ein Werwolf hat einen schlafenden Spieler getroffen. */
     public void wolfHit(Player wolf, Player victim) {
         if (state != State.NIGHT || roles.get(wolf.getUniqueId()) != Role.WERWOLF) {
+            return;
+        }
+        if (pendingVictim != null) {
             return;
         }
         wolfTargets.put(wolf.getUniqueId(), victim.getUniqueId());
@@ -1064,15 +1073,16 @@ public class GameManager {
 
     /** Seherinnen-Phase: 45 s, Kopf anklicken, Rolle erfahren. */
     public void startSeerPhase() {
-        if (state != State.NIGHT) {
+        if (state != State.NIGHT || seerPhaseStarted) {
             return;
         }
-        Script.say(Script.SEER);
+        seerPhaseStarted = true;
         Player seer = alivePlayerWithRole(Role.SEHER);
         if (seer == null) {
             startWitchPhase();
             return;
         }
+        Script.say(Script.SEER);
         plugin.cinematic().wake(seer);
         int houseId = houseOf(seer);
         if (plugin.config().house(houseId).spawn != null) {
@@ -1190,15 +1200,16 @@ public class GameManager {
     }
 
     public void startWitchPhase() {
-        if (state != State.NIGHT) {
+        if (state != State.NIGHT || witchPhaseStarted) {
             return;
         }
-        Script.say(Script.WITCH);
+        witchPhaseStarted = true;
         Player witch = alivePlayerWithRole(Role.HEXE);
         if (witch == null) {
             Bukkit.getScheduler().runTaskLater(plugin, this::startDay, 40L);
             return;
         }
+        Script.say(Script.WITCH);
         plugin.cinematic().wake(witch);
         int houseId = houseOf(witch);
         if (plugin.config().house(houseId).spawn != null) {
@@ -1780,6 +1791,9 @@ public class GameManager {
             return;
         }
         state = State.CINEMATIC;
+        wolfPhaseStarted = false;
+        seerPhaseStarted = false;
+        witchPhaseStarted = false;
         applyVoicePermissions();
         cancelNightCountdown();
         Script.say(Script.NIGHT_FALLS);

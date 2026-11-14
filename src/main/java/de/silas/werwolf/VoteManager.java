@@ -49,6 +49,9 @@ public class VoteManager {
 
     public void start() {
         GameManager game = plugin.gameManager();
+        if (active) {
+            return;
+        }
         if (game.state() != GameManager.State.DAY) {
             Bukkit.broadcast(Component.text("Die Abstimmung ist nur am Tag möglich.", NamedTextColor.RED));
             return;
@@ -65,6 +68,7 @@ public class VoteManager {
                 open(player);
             }
         }
+        plugin.getLogger().info("Abstimmung gestartet (" + VOTE_SECONDS + " s, " + game.alive().size() + " Wähler)");
         startTimer(VOTE_SECONDS);
     }
 
@@ -259,6 +263,7 @@ public class VoteManager {
     }
 
     private void finish() {
+        plugin.getLogger().info("Abstimmung beendet: " + votes.size() + " Stimme(n)");
         Map<UUID, Integer> counts = new LinkedHashMap<>();
         UUID mayor = plugin.gameManager().mayorId();
         for (Map.Entry<UUID, UUID> entry : votes.entrySet()) {
